@@ -282,8 +282,8 @@ network() {
 
     # private ip: hostname -I 
 
-    # check internet connection. ping google.com and send 4 icmp packets...
-    inetConn=$(ping -c 4 google.com > /dev/null 2>&1)
+    # check internet connection. ping google.com and send icmp packet...
+    inetConn=$(ping -c 1 google.com > /dev/null 2>&1)
     if [[ $(echo $?) -eq 0 ]]; then
         # ip adress data (isp name, region, city, public ip...) source: https://ipinfo.io
         # there are other web servers, check this article: https://www.linuxtrainingacademy.com/determine-public-ip-address-command-line-curl/
