@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# "The script will gather real-time directory changes in "dirStat.log" file
+# The script will gather real-time directory changes in "dirStat.log" file
 
 RESET="\e[0m"
 BOLD="\e[1m"
