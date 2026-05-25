@@ -34,7 +34,7 @@ cleanup() {
   rm -f "$PREV_RES" "$CURR_RES" && exit
 }
 
-# remove temporary files on keyborad interrupt
+# remove temporary files on keyboard interrupt
 trap cleanup SIGINT SIGTERM
 
 main() {  
