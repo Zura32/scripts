@@ -30,6 +30,13 @@ getStats() {
   echo "Number of subdirectories: $(find "$dir" -type d 2>&1 | sed '1d' | wc -l)" >> "$output_file" # The first file is directory, in which we are looking for subdirectories, so remove it from output using sed. 
 }
 
+cleanup() {
+  rm -f "$PREV_RES" "$CURR_RES" && exit
+}
+
+# remove temporary files on keyborad interrupt
+trap cleanup SIGINT SIGTERM
+
 main() {  
   local dir_owner=$(stat -c %U "$dir_path")
   [[ "$dir_owner" == "root" && "$USER" != "root" ]] && echo -e "${GREEN}$dir_path owner is root, you should run the script with sudo or log in as root.${RESET}"
