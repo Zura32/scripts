@@ -140,8 +140,6 @@ declare -A INTERFACE_VENDOR_MAP=(
     [0x1d6a]="Red Hat"
 )
 
-
-# Helper functions 
 convert_to_mb() {
     local res=$(( $1 / 1024 ))  
     echo $res
@@ -255,33 +253,6 @@ ram() {
 }
 
 network() {
-    # Interfaces, arp
-    # 1) /proc/net/arp -- ARP cache 
-    # 2) /proc/net/dev -- interface statistics
-    # 3) /proc/net/tcp; /proc/net/udp -- sockets 
-    # 4) /sys/class/net/*/address -- MAC address 
-    # 5) /sys/class/net/*/operstate -- up/down
-    
-    # Private ip 
-    # 1) /proc/net/fib_trie  -- kernel routing table containing IP
-    # 2) /var/lib/dhcp/dhclient.leases -- DHCP assigned IP
-    # 3) /etc/network/interfaces -- static config (Debian legacy)
-    # 4) /etc/NetworkManager/system-connections/ -- NetworkManager config
-    # 5) /etc/sysconfig/network-scripts/ifcfg-* -- RHEL static config
-
-    # Network config files (Legacy/Modern)
-    # 1) Debian/Ubuntu
-    #   -- Legacy - ifupdown (Debian <= 10; Ubuntu <= 16.04) /etc/network/interfaces; /etc/network/interfaces.d/*.cfg
-    #   -- Modern - Netplan (Default Ubuntu Server) (Debian 11-12; Ubuntu Server >= 18.04) /etc/netplan/*.yaml
-    #   -- Modern - NetworkManager (Default Ubuntu Desktop) (Ubuntu Desktop >= 18.04) /etc/NetworkManager/system-connections/*.nmconnection
-    #   -- Modern - Systemd-networkd /etc/systemd/network/*.network; /etc/systemd/network/*.netdev
-    # 2) Centos/RHEL/AlmaLinux/Rocky Linux 
-    #   -- Legacy - ifcfg (RHEL <= 8; Centos <= 8; Rocky 9) /etc/sysconfig/network-scripts/ifcfg-<interface>
-    #   -- Modern - NetworkManager (RHEL >= 9; Rocky >= 9; AlmaLinux >= 9) /etc/NetworkManager/system-connections/*.nmconnection
-    #   -- Modern - Systemd-networkd /etc/systemd/network/*.network; /etc/systemd/network/*.netdev
-
-    # private ip: hostname -I 
-
     # check internet connection. ping google.com and send icmp packet...
     inetConn=$(ping -c 1 google.com > /dev/null 2>&1)
     if [[ $(echo $?) -eq 0 ]]; then
@@ -296,18 +267,11 @@ network() {
         echo -e "${RED}Getting ISP name, public IP failed. there is no internet connection!${END}"
     fi
 
-    # commands to lookup configured dns servers (on system and network interfaces)
-    # 1) resolvectl
-    # 2) nslookup <domain_name>
-    # 3) nmcli
-    
-    # system nameserver
     sysNameServer=$(cat /etc/resolv.conf | grep nameserver | awk -F ' ' '{ print $2 }')
     echo -e "${GREEN}System name server:${RESET} $sysNameServer"
     
     echo
 
-    # interfaces data, file: /sys/class/net 
     echo "==================== Interfaces General Information ====================" 
     interfaceCount=0
     for interface in $(ls /sys/class/net); do
@@ -350,33 +314,7 @@ network() {
         echo -e "$TRIPLE_SPACE${GREEN}Cable link:${RESET} $cableLink"
     done
 
-    echo 
-
-    # interfaces live statistics
-    echo "==================== Interfaces Statistics ===================="
-
-    # stat files content meaning 
-    # 1) rx_bytes -- Total bytes recieved
-    # 2) tx_bytes -- Total bytes transmitted
-    # 3) rx_packets -- Number of packets recieved
-    # 4) tx_packets -- Number of packets transmitted
-    # 5) rx_errors -- Packets recieved with errors 
-    # 6) tx_errors -- Transmission errors 
-    # 7) rx_dropped -- Recieved packets dropped by kernel 
-    # 8) tx_dropped -- Transmit packets dropped
-    # 9) multicast -- Multicast packets recieved
-    # 10) collisions -- Ethernet collisions during transmission 
-    # 11) rx_crc_errors -- Packets with CRC errors 
-    # 12) rx_length_errors -- Packets with incorect length 
-    # 13) rx_frame_errors -- Frame alignment errors
-    # 14) rx_fifo_errors -- FIFO buffer overflow
-    # 15) rx_missed_errors -- Packets missed due to hardware limits 
-    # 16) tx_aborted_errors -- Transmission aborted 
-    # 17) tx_carrier_errors -- Carrier signal errors 
-    # 18) tx_fifo_errors -- Transmit FIFO overflow
-    # 19) tx_heartbeat_errors -- Heartbeat failure (old Ethernet)
-    # 20) tx_window_errors -- Transmission window errors
-
+    echo
 }
 
 kernel() {
@@ -414,11 +352,9 @@ bios() {
 }
 
 summary() {
-    # Hostname
     hostname=$(cat /etc/hostname)
     echo -e "${GREEN}Hostname:${RESET} $hostname"
 
-    # Machine name, model, manufacturer
     machine_manufacturer=$(cat /sys/class/dmi/id/sys_vendor)
     machine_name=$(cat /sys/class/dmi/id/product_name)
     machine_ver=$(cat /sys/class/dmi/id/product_version)
@@ -428,17 +364,13 @@ summary() {
     echo -e "${GREEN}Machine Name:${RESET} $machine_name $machine_ver"
     echo -e "${GREEN}Machine Type:${RESET} $machine_type"
 
-    # OS 
     os_name=$(cat /etc/os-release | grep "PRETTY_NAME" | awk -F '=' '{ print $2 }' | tr -d '"')
     echo -e "${GREEN}Operating System:${RESET} $os_name"
 
-    # DE
     echo -e "${GREEN}Desktop Environment:${RESET} $(echo $XDG_CURRENT_DESKTOP $XDG_SESSION_TYPE)"
 
-    # Kernel
     kernel "-s"
 
-    # Motherboard
     board_name=$(cat /sys/class/dmi/id/board_name)
     echo -e "${GREEN}Motherboard:${RESET} $board_name"
 
@@ -446,16 +378,13 @@ summary() {
     ram "-s"
     gpu "-s"
 
-    # Storage
     storage_block_device=$(ls /sys/block/ | grep -E "^nvme|^sd")
     storage_device_name=$(cat /sys/block/"$storage_block_device"/device/model)
     echo -e "${GREEN}Storage:${RESET} $storage_device_name"
 
-    # Resolution
     resolution=$(cat /sys/class/graphics/fb0/virtual_size | sed 's/,/x/')
     echo -e "${GREEN}Resolution:${RESET} $resolution"
 
-    # Uptime
     uptime=$(cat /proc/uptime | awk -F ' ' '{ print $1 }' | cut -d'.' -f 1)
     uptime_hours=$(( $uptime / 3600 ))
     uptime_minutes=$(( ($uptime - $uptime_hours * 3600) / 60 ))
